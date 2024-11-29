@@ -1,9 +1,8 @@
-import 'dart:convert';
-import 'dart:math';
-
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:percent_indicator/percent_indicator.dart';
+import 'package:swifty/pages/profile_page.dart';
+import 'package:swifty/pages/search_page.dart';
 import 'package:swifty/store/store.dart';
 
 class MyDetailsPage extends StatelessWidget {
@@ -11,98 +10,102 @@ class MyDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = StoreProvider.user ?? {};
     return Scaffold(
-        body: SafeArea(
-      child: Text("hello world"),
-    )
-        // body: SafeArea(
-        //   child: Scrollbar(
-        //     child: Stack(
-        //       children: [
-        //         Column(
-        //           children: [
-        //             Container(
-        //               width: double.infinity,
-        //               padding: const EdgeInsets.all(20),
-        //               color: Colors.blue,
-        //               child: Column(
-        //                 children: [
-        //                   CircleAvatar(
-        //                     radius: 50,
-        //                     backgroundImage:
-        //                         NetworkImage(user['image']['link'] ?? ''),
-        //                   ),
-        //                   const SizedBox(height: 5),
-        //                   Row(
-        //                     mainAxisAlignment: MainAxisAlignment.center,
-        //                     children: [
-        //                       Text(
-        //                         user['login'] ?? '',
-        //                         style: const TextStyle(
-        //                           fontSize: 20,
-        //                           fontWeight: FontWeight.bold,
-        //                           color: Colors.white,
-        //                         ),
-        //                       ),
-        //                       const SizedBox(width: 5),
-        //                       Icon(
-        //                         Icons.verified,
-        //                         color: Colors.white,
-        //                         size: 20,
-        //                       ),
-        //                     ],
-        //                   ),
-        //                   const SizedBox(height: 5),
-        //                   Row(
-        //                     mainAxisAlignment: MainAxisAlignment.center,
-        //                     children: [
-        //                       Text(
-        //                         'points: ${user['correction_point'] ?? 0}',
-        //                         style: const TextStyle(
-        //                           fontSize: 16,
-        //                           color: Colors.white,
-        //                         ),
-        //                       ),
-        //                       const SizedBox(width: 100),
-        //                       Text(
-        //                         'wallet: ${user['wallet'] ?? 0}',
-        //                         style: const TextStyle(
-        //                           fontSize: 16,
-        //                           color: Colors.white,
-        //                         ),
-        //                       ),
-        //                     ],
-        //                   ),
-        //                   const SizedBox(height: 5),
-        //                   Center(
-        //                     child: LinearPercentIndicator(
-        //                       width: double.infinity - 40,
-        //                       lineHeight: 8.0,
-        //                       percent: 0.9,
-        //                       progressColor: Colors.orange,
-        //                     ),
-        //                   )
-        //                 ],
-        //               ),
-        //             ),
-        //           ],
-        //         ),
-        //         Positioned(
-        //           top: 10,
-        //           left: 10,
-        //           child: IconButton(
-        //             icon: const Icon(Icons.logout),
-        //             onPressed: () {
-        //               Provider.of<StoreProvider>(context, listen: false).logout();
-        //               Navigator.of(context).pop();
-        //             },
-        //           ),
-        //         ),
-        //       ],
-        //     ),
-        //   ),
-        // ),
-        );
+      appBar: AppBar(
+        title: const Text("Details"),
+      ),
+      drawer: const NavigationDrawer(),
+      body: Consumer<StoreProvider>(
+        builder: (context, store, child) {
+          final pageNumber = store.pageNumber;
+          final searchName =
+              store.searchName ?? store.user?['login'] ?? 'Unknown';
+
+          if (pageNumber == 0) {
+            return MyProfilePage(loginSender: searchName);
+          } else if (pageNumber == 1) {
+            return const MySearchProfile();
+          } else {
+            return const Center(child: Text("Page not found"));
+          }
+        },
+      ),
+    );
+  }
+}
+
+class NavigationDrawer extends StatelessWidget {
+  const NavigationDrawer({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Drawer(
+      child: ListView(
+        children: [
+          DrawerHeader(
+            decoration: BoxDecoration(color: Theme.of(context).primaryColor),
+            child: const Text(
+              "Navigation",
+              style: TextStyle(color: Colors.white, fontSize: 24),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.person, color: Colors.blue),
+            title: const Text(
+              "Profile",
+              style: TextStyle(fontSize: 18, color: Colors.black),
+            ),
+            onTap: () {
+              final store = Provider.of<StoreProvider>(context, listen: false);
+              store.setSearchName(store.user?['login']);
+              _navigateToPage(context, 0);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.search, color: Colors.green),
+            title: const Text(
+              "Search",
+              style: TextStyle(fontSize: 18, color: Colors.black),
+            ),
+            onTap: () {
+              _navigateToPage(context, 1);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: const Text(
+              "Logout",
+              style: TextStyle(color: Colors.red, fontSize: 18),
+            ),
+            onTap: () {
+              final store = Provider.of<StoreProvider>(context, listen: false);
+              store.clearUser();
+              store.setSearchName(null);
+              GoRouter.of(context).go("/login");
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _navigateToPage(BuildContext context, int index) {
+    final store = Provider.of<StoreProvider>(context, listen: false);
+    store.setPageNumber(index);
+
+    switch (index) {
+      case 0:
+        store.setSearchName(store.user?['login']);
+        GoRouter.of(context).go('/details/profile');
+        break;
+      case 1:
+        GoRouter.of(context).go('/details/search');
+        break;
+    }
+
+    // Safely close the drawer
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
   }
 }

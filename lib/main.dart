@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:swifty/auth/auth.dart';
-import 'package:swifty/router/app_router.dart';
+import 'package:swifty/pages/details_page.dart';
+import 'package:swifty/pages/login_page.dart';
+import 'package:swifty/pages/profile_page.dart';
+import 'package:swifty/pages/search_page.dart';
 import 'package:swifty/store/store.dart';
 
 void main() {
@@ -12,25 +14,36 @@ void main() {
   );
 }
 
-late final GoRouter _router = GoRouter(
-  debugLogDiagnostics: true,
-  routes: $appRoutes,
+final _router = GoRouter(
+  routes: [
+    GoRoute(
+      path: "/login",
+      pageBuilder: (context, state) => MaterialPage(child: const LoginPage()),
+    ),
+    GoRoute(
+      path: '/details',
+      builder: (context, state) => const MyDetailsPage(),
+      routes: [
+        GoRoute(
+          path: 'profile',
+          builder: (context, state) =>
+              MyProfilePage(loginSender: state.extra as String? ?? ''),
+        ),
+        GoRoute(
+          path: 'search',
+          builder: (context, state) => MySearchProfile(),
+        ),
+      ],
+    ),
+  ],
   redirect: (context, state) async {
-    print("i ma here in first redirect");
-    //// check token in store
-    if (StoreProvider.token == null) {
-      return const LoginRoute().location;
-    }
-    final AuthService _authService = AuthService();
-    final bool isTokenValid =
-        await _authService.checktoken(StoreProvider.token!);
-    print('isTokenValid: $isTokenValid');
-    if (!isTokenValid) {
-      print("test test")
-      return const LoginRoute().location;
+    final storeProvider = Provider.of<StoreProvider>(context, listen: false);
+    final token = storeProvider.token;
+    if (token == null) {
+      print("No token found");
+      return "/login";
     } else {
-        print("test test")
-      return const DetailsRoute().location;
+      return "/details";
     }
   },
 );
