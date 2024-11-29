@@ -81,15 +81,11 @@ class _MyProfilePageState extends State<MyProfilePage> {
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(
                         vertical: 20, horizontal: 30),
-
                     decoration: BoxDecoration(
                       color: Colors.blue,
                       borderRadius: BorderRadius.circular(
                           15), // Adjust the radius as needed
                     ),
-
-                    /// i need the rounded
-
                     child: Stack(children: [
                       Column(
                         children: [
@@ -100,8 +96,6 @@ class _MyProfilePageState extends State<MyProfilePage> {
                                   'https://cdn.intra.42.fr/users/medium_default.png',
                             ),
                           ),
-
-                          // const SizedBox(height: 5),
                           Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -249,7 +243,12 @@ class _MyProfilePageState extends State<MyProfilePage> {
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(10),
                                   child: LinearProgressIndicator(
-                                    value: 0.2 / 21,
+                                    value: snapshot.data?['cursus_users'][0]
+                                                ["level"] -
+                                            snapshot.data?['cursus_users'][0]
+                                                    ["level"]
+                                                ?.floorToDouble() ??
+                                        0,
                                     backgroundColor: const Color.fromARGB(
                                         255, 184, 188, 188),
                                     valueColor:
@@ -259,7 +258,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
                                 ),
                               ),
                               Text(
-                                "${snapshot.data?['level']?.toString() ?? ''}%",
+                                "${snapshot.data?['cursus_users'][1]["level"]?.toString() ?? ''}%",
                                 style: const TextStyle(
                                   color: Colors.black26,
                                   fontWeight: FontWeight.bold,
