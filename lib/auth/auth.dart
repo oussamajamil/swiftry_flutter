@@ -1,41 +1,45 @@
 import 'package:http/http.dart' as http;
-import 'package:oauth2_client/access_token_response.dart';
 import 'dart:convert';
-import 'package:oauth2_client/oauth2_client.dart';
-import 'package:oauth2_client/oauth2_helper.dart';
+import 'package:flutter_web_auth/flutter_web_auth.dart';
 
 class AuthService {
-  // final String _baseUrl = "https://api.intra.42.fr/v2/";
-  late final OAuth2Helper _oauth2Helper;
-
-  final OAuth2Client client = OAuth2Client(
-    authorizeUrl: 'https://api.intra.42.fr/oauth/authorize',
-    tokenUrl: 'https://api.intra.42.fr/oauth/token',
-    redirectUri: 'swiftyapp://details',
-    customUriScheme: 'swiftyapp',
-  );
-
-  AuthService() {
-    _oauth2Helper = OAuth2Helper(client,
-        clientSecret:
-            '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',
-        clientId: 'u-s4t2ud-e3ffe29b23bca6d91f32a4f6846dbc6388ec2c2656dc486e03688c6d75b8765a',
-        scopes: ['public']);
-  }
+  final String clientId =
+      "u-s4t2ud-e3ffe29b23bca6d91f32a4f6846dbc6388ec2c2656dc486e03688c6d75b8765a";
+  final String clientSecret =
+      "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";
+  final String redirectUri = 'swiftyapp://details';
+  final String authUrl = "https://api.intra.42.fr/oauth/authorize";
+  final String tokenUrl = "https://api.intra.42.fr/oauth/token";
 
   Future<String> login() async {
-    try {
-      final AccessTokenResponse? result = await _oauth2Helper.getToken();
-      if (result != null && result.accessToken != null) {
-        // Return the access token if it's available
-        return result.accessToken!;
+    final result = await FlutterWebAuth.authenticate(
+      url:
+          "$authUrl?client_id=$clientId&redirect_uri=$redirectUri&response_type=code",
+      callbackUrlScheme: "swiftyapp",
+    );
+
+    final code = Uri.parse(result).queryParameters['code'];
+    if (code != null) {
+      final http.Response response = await http.post(
+        Uri.parse(tokenUrl),
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: {
+          'grant_type': 'authorization_code',
+          'client_id': clientId,
+          'client_secret': clientSecret,
+          'code': code,
+          'redirect_uri': redirectUri,
+        },
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body)['access_token'];
       } else {
-        // If the result is null or the access token is null, throw an error
-        throw Exception("Failed to retrieve access token: result is null");
+        throw Exception("Failed to retrieve access code");
       }
-    } catch (e) {
-      // Rethrow the error for the caller to handle
-      throw Exception("Error during login: $e");
+    } else {
+      throw Exception("Failed to retrieve access code");
     }
   }
 
@@ -66,6 +70,7 @@ class AuthService {
         },
       );
       if (response.statusCode == 200) {
+        print(response.body);
         return jsonDecode(response.body);
       } else {
         throw Exception("Failed to retrieve user info: ${response.statusCode}");
@@ -94,19 +99,19 @@ class AuthService {
   }
 
   // refresh token
-  Future<String> refreshToken(String refreshToken) async {
-    try {
-      final AccessTokenResponse? result =
-          await _oauth2Helper.refreshToken(refreshToken as AccessTokenResponse);
-      if (result != null && result.accessToken != null) {
-        return result.accessToken!;
-      } else {
-        throw Exception("Failed to retrieve access token: result is null");
-      }
-    } catch (e) {
-      throw Exception("Error during refreshToken: $e");
-    }
-  }
+  // Future<String> refreshToken(String refreshToken) async {
+  //   try {
+  //     final AccessTokenResponse? result =
+  //         await _oauth2Helper.refreshToken(refreshToken as AccessTokenResponse);
+  //     if (result != null && result.accessToken != null) {
+  //       return result.accessToken!;
+  //     } else {
+  //       throw Exception("Failed to retrieve access token: result is null");
+  //     }
+  //   } catch (e) {
+  //     throw Exception("Error during refreshToken: $e");
+  //   }
+  // }
 
   /// coalitions endpoint
   Future<Map<String, dynamic>> getCoalitions(String token) async {

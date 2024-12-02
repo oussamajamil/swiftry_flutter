@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_radar_chart/flutter_radar_chart.dart';
+import 'package:horizontal_scroll_view/horizontal_scroll_view.dart';
 import 'package:provider/provider.dart';
 import 'package:swifty/store/store.dart';
 import 'package:http/http.dart' as http;
@@ -73,16 +74,13 @@ class _MyProfilePageState extends State<MyProfilePage> {
               child: Container(
                 padding:
                     const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                width: MediaQuery.of(context).size.width, // Full width
-                height: MediaQuery.of(context).size.height,
-                color: const Color.fromARGB(255, 232, 233, 234),
                 child: Column(children: [
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(
-                        vertical: 20, horizontal: 30),
+                        vertical: 10, horizontal: 20),
                     decoration: BoxDecoration(
-                      color: Colors.blue,
+                      color: const Color.fromARGB(255, 80, 77, 84),
                       borderRadius: BorderRadius.circular(
                           15), // Adjust the radius as needed
                     ),
@@ -90,7 +88,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
                       Column(
                         children: [
                           CircleAvatar(
-                            radius: 70,
+                            radius: 60,
                             backgroundImage: NetworkImage(
                               snapshot.data?['image']["link"] ??
                                   'https://cdn.intra.42.fr/users/medium_default.png',
@@ -258,7 +256,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
                                 ),
                               ),
                               Text(
-                                "${snapshot.data?['cursus_users'][1]["level"]?.toString() ?? ''}%",
+                                "${snapshot.data?['cursus_users']?[1]["level"]?.toString() ?? ''}%",
                                 style: const TextStyle(
                                   color: Colors.black26,
                                   fontWeight: FontWeight.bold,
@@ -271,7 +269,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
                       ),
                     ]),
                   ),
-                  const SizedBox(height: 5),
+                  const SizedBox(height: 10),
                   Row(
                     children: [
                       Text(
@@ -285,50 +283,92 @@ class _MyProfilePageState extends State<MyProfilePage> {
                       Text(
                         '(completed)',
                         style: const TextStyle(
-                          fontSize: 12,
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
                   ),
                   Container(
-                    height: 155,
-                    color: const Color.fromARGB(255, 207, 209, 207),
+                    height: 180, // Slightly increased height for better spacing
                     child: Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: Center(
-                        child: ListView.builder(
-                          itemCount: snapshot.data?['projects_users']
-                              .where(
-                                  (project) => project['status'] == 'finished')
-                              .length,
-                          itemBuilder: (context, index) {
-                            final finishedProjects = snapshot
-                                .data?['projects_users']
-                                .where((project) =>
-                                    project['status'] == 'finished')
-                                .toList();
-
-                            final project = finishedProjects[index];
-                            return ListTile(
-                              title: Text(project['project']['name']),
-                              subtitle: Text(project['status']),
-                              trailing: Text(
-                                project['final_mark'] != null
-                                    ? project['final_mark'].toString()
-                                    : 'Not graded',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Color.fromARGB(255, 29, 176, 39),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 10, horizontal: 15),
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: snapshot.data?['projects_users']
+                            .where((project) =>
+                                project['status'] == 'finished' &&
+                                project['final_mark'] != null &&
+                                project['final_mark'] > 10)
+                            .length,
+                        itemBuilder: (context, index) {
+                          final project = snapshot.data?['projects_users']
+                              .where((project) =>
+                                  project['status'] == 'finished' &&
+                                  project['final_mark'] != null &&
+                                  project['final_mark'] > 10)
+                              .toList()[index];
+                          return Container(
+                            width: 160, // Adjusted card width
+                            margin: const EdgeInsets.only(right: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(15),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.2),
+                                  spreadRadius: 2,
+                                  blurRadius: 5,
+                                  offset: const Offset(
+                                      0, 3), // changes position of shadow
                                 ),
+                              ],
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(5),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    project['project']['name'] ??
+                                        'Unnamed Project',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    maxLines: 1,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Status: ${project['status'] ?? 'Unknown'}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    project['final_mark'] != null
+                                        ? 'Grade: ${project['final_mark']}'
+                                        : 'Not graded',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                      color: Color.fromARGB(255, 29, 176, 39),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            );
-                          },
-                        ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ),
-                  const SizedBox(height: 5),
+                  const SizedBox(height: 10),
                   Row(
                     children: [
                       Text(
@@ -342,46 +382,86 @@ class _MyProfilePageState extends State<MyProfilePage> {
                       Text(
                         '(in progress)',
                         style: const TextStyle(
-                          fontSize: 12,
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
                   ),
                   Container(
-                    height: 155,
-                    color: const Color.fromARGB(255, 207, 209, 207),
+                    height: 200, // Slightly increased height for better spacing
                     child: Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: Center(
-                        child: ListView.builder(
-                          itemCount: snapshot.data?['projects_users']
-                              .where(
-                                  (project) => project['status'] != 'finished')
-                              .length,
-                          itemBuilder: (context, index) {
-                            final finishedProjects = snapshot
-                                .data?['projects_users']
-                                .where((project) =>
-                                    project['status'] != 'finished')
-                                .toList();
-
-                            final project = finishedProjects[index];
-                            return ListTile(
-                              title: Text(project['project']['name']),
-                              subtitle: Text(project['status']),
-                              trailing: Text(
-                                project['final_mark'] != null
-                                    ? project['final_mark'].toString()
-                                    : 'Not graded',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Color.fromARGB(255, 29, 176, 39),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 10, horizontal: 15),
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: snapshot.data?['projects_users']
+                            .where((project) =>
+                                project['status'] != 'finished' &&
+                                project['final_mark'] == null)
+                            .length,
+                        itemBuilder: (context, index) {
+                          final project = snapshot.data?['projects_users']
+                              .where((project) =>
+                                  project['status'] != 'finished' &&
+                                  project['final_mark'] == null)
+                              .toList()[index];
+                          return Container(
+                            width: 160, // Adjusted card width
+                            margin: const EdgeInsets.only(right: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(15),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.2),
+                                  spreadRadius: 2,
+                                  blurRadius: 5,
+                                  offset: const Offset(
+                                      0, 3), // changes position of shadow
                                 ),
+                              ],
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(5),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    project['project']['name'] ??
+                                        'Unnamed Project',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    maxLines: 1,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Status: ${project['status'] ?? 'Unknown'}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    project['final_mark'] != null
+                                        ? 'Grade: ${project['final_mark']}'
+                                        : 'Not graded',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                      color: Color.fromARGB(255, 29, 176, 39),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            );
-                          },
-                        ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ),
@@ -398,28 +478,32 @@ class _MyProfilePageState extends State<MyProfilePage> {
                     ],
                   ),
                   Container(
-                    height: 175,
-                    color: const Color.fromARGB(255, 207, 209, 207),
+                    height: 200,
+                    color: const Color.fromARGB(255, 246, 248, 246),
                     child: Padding(
                       padding: const EdgeInsets.all(15),
                       child: RadarChart.light(
-                        ticks: (snapshot.data?['cursus_users'][0]['skills']
+                        ticks: (snapshot.data?['cursus_users'][1]['skills']
                                 as List)
                             .map<int>(
                                 (skill) => (skill['level'] as num).toInt())
                             .toList(),
-                        features: (snapshot.data?['cursus_users'][0]['skills']
+                        features: (snapshot.data?['cursus_users'][1]['skills']
                                 as List)
                             .map<String>((skill) => skill['name'].toString())
                             .toList(),
                         data: [
-                          (snapshot.data?['cursus_users'][0]['skills'] as List)
-                              .map<int>(
-                                  (skill) => (skill['level'] as num).toInt())
+                          (snapshot.data?['cursus_users'][1]['skills'] as List)
+                              .map<int>((skill) =>
+                                  (skill['level'] / 1000 as num).toInt())
                               .toList()
                         ],
                         reverseAxis: true,
                         useSides: true,
+
+                        /// text size of the axis
+                        // fontSize: 12, not working
+                        // text size of the axis
                       ),
                     ),
                   ),

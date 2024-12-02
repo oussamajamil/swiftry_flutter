@@ -46,6 +46,8 @@ dependencies:
   flutter_hooks: ^0.20.5
   logger: ^2.5.0
   awesome_snackbar_content: ^0.1.4
+  flutter_web_auth: ^0.6.0
+  horizontal_scroll_view: ^0.0.5
 
 dev_dependencies:
   flutter_test:

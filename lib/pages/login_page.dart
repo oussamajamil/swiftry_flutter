@@ -56,6 +56,7 @@ class _LoginPageState extends State<LoginPage> {
                     onPressed: () async {
                       try {
                         final String token = await _authService.login();
+                        print(token);
                         if (token.isEmpty) {
                           throw Exception("Failed to retrieve access token");
                         }

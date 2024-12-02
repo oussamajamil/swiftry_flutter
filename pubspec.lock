@@ -333,6 +333,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_web_auth:
+    dependency: "direct main"
+    description:
+      name: flutter_web_auth
+      sha256: "95e4856e24fb6ac1678f5ff334743b63f782d839ab324543d29ccbd295176209"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.6.0"
   flutter_web_auth_2:
     dependency: transitive
     description:
@@ -394,6 +402,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.2"
+  horizontal_scroll_view:
+    dependency: "direct main"
+    description:
+      name: horizontal_scroll_view
+      sha256: "4063046ede7a0fef52ec1df13131e95025f2796975a3dbc52853353436b2f754"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.5"
   http:
     dependency: "direct main"
     description:

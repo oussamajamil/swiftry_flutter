@@ -39,16 +39,35 @@ class NavigationDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final store = Provider.of<StoreProvider>(context, listen: false);
     return Drawer(
       child: ListView(
         children: [
           DrawerHeader(
-            decoration: BoxDecoration(color: Theme.of(context).primaryColor),
-            child: const Text(
-              "Navigation",
-              style: TextStyle(color: Colors.white, fontSize: 24),
-            ),
-          ),
+              decoration: BoxDecoration(color: Colors.lightBlue),
+              child: Column(
+                children: [
+                  CircleAvatar(
+                    radius: 40,
+                    backgroundImage: NetworkImage(
+                      store.user?['image']["link"] ??
+                          'https://via.placeholder.com/150',
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Consumer<StoreProvider>(
+                    builder: (context, store, child) {
+                      return Text(
+                        store.user?['login'] ?? 'Unknown',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              )),
           ListTile(
             leading: const Icon(Icons.person, color: Colors.blue),
             title: const Text(
