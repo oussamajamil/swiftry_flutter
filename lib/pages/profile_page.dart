@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_radar_chart/flutter_radar_chart.dart';
-import 'package:horizontal_scroll_view/horizontal_scroll_view.dart';
 import 'package:provider/provider.dart';
 import 'package:swifty/store/store.dart';
 import 'package:http/http.dart' as http;
@@ -43,7 +42,8 @@ class _MyProfilePageState extends State<MyProfilePage> {
       },
     );
     if (response.statusCode == 200) {
-      printLongMessage('User detail fetched successfully: ${response.body}');
+      printLongMessage(
+          '|||||User detail fetched successfully||||: ${response.body}');
       return json.decode(response.body);
     } else {
       throw Exception('Failed to load user detail');
@@ -77,79 +77,184 @@ class _MyProfilePageState extends State<MyProfilePage> {
                 child: Column(children: [
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 10, horizontal: 20),
                     decoration: BoxDecoration(
                       color: const Color.fromARGB(255, 80, 77, 84),
                       borderRadius: BorderRadius.circular(
                           15), // Adjust the radius as needed
                     ),
                     child: Stack(children: [
-                      Column(
-                        children: [
-                          CircleAvatar(
-                            radius: 60,
-                            backgroundImage: NetworkImage(
-                              snapshot.data?['image']["link"] ??
-                                  'https://cdn.intra.42.fr/users/medium_default.png',
+                      Positioned(
+                        top: 10,
+                        right: 8,
+                        child: Container(
+                          height: 30,
+                          width: 130,
+                          decoration: BoxDecoration(
+                            color: const Color.fromARGB(255, 151, 148, 155),
+                            borderRadius: const BorderRadius.only(
+                              topRight: Radius.circular(5),
+                              bottomRight: Radius.circular(5),
                             ),
                           ),
-                          Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  snapshot.data?['first_name'] ?? '',
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(width: 5),
-                                Text(
-                                  snapshot.data?['last_name'] ?? '',
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(width: 5),
-                                Icon(
-                                  Icons.verified,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                              ]),
-                          const SizedBox(height: 10),
-                          Row(
+                          child: Center(
+                              child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(
-                                Icons.email,
-                                color: Colors.white,
-                              ),
-                              const SizedBox(width: 5),
-                              Text(
-                                snapshot.data?['email'] ?? '',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20,
+                              if (snapshot.data?['location'] != null)
+                                Row(
+                                  children: [
+                                    Container(
+                                      height: 15,
+                                      width: 15,
+                                      decoration: const BoxDecoration(
+                                        color:
+                                            Color.fromARGB(255, 14, 241, 105),
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 5),
+                                    Text(
+                                      snapshot.data?['location'] ?? '',
+                                      style: const TextStyle(
+                                        color:
+                                            Color.fromARGB(255, 14, 241, 105),
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
+                              if (snapshot.data?['location'] == null)
+                                Row(
+                                  children: [
+                                    Container(
+                                      height: 15,
+                                      width: 15,
+                                      decoration: const BoxDecoration(
+                                        color: Color.fromARGB(255, 224, 156, 8),
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 5),
+                                    const Text(
+                                      'Unavailable',
+                                      style: TextStyle(
+                                        color: Color.fromARGB(255, 255, 175, 2),
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                             ],
-                          ),
-                          Row(
+                          )),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 10, horizontal: 20),
+                        child: Column(
+                          children: [
+                            CircleAvatar(
+                              radius: 60,
+                              backgroundImage: NetworkImage(
+                                snapshot.data?['image']["link"] ??
+                                    'https://cdn.intra.42.fr/users/medium_default.png',
+                              ),
+                            ),
+                            Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    snapshot.data?['first_name'] ?? '',
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    snapshot.data?['last_name'] ?? '',
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Icon(
+                                    Icons.verified,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ]),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.email,
+                                  color: Colors.white,
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  snapshot.data?['email'] ?? '',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.person,
+                                        color: Colors.white,
+                                      ),
+                                      const SizedBox(width: 5),
+                                      Text(
+                                        snapshot.data?['login'] ?? '',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 20,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(
+                                        Icons.school,
+                                        color: Colors.white,
+                                      ),
+                                      const SizedBox(width: 5),
+                                      Text(
+                                        snapshot.data?['kind'] ?? '',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 20,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ]),
+                            Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Row(
                                   children: [
                                     const Icon(
-                                      Icons.person,
+                                      Icons.wallet_outlined,
                                       color: Colors.white,
                                     ),
                                     const SizedBox(width: 5),
                                     Text(
-                                      snapshot.data?['login'] ?? '',
+                                      snapshot.data?['wallet'].toString() ??
+                                          '0',
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 20,
@@ -161,12 +266,12 @@ class _MyProfilePageState extends State<MyProfilePage> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     const Icon(
-                                      Icons.school,
+                                      Icons.star,
                                       color: Colors.white,
                                     ),
                                     const SizedBox(width: 5),
                                     Text(
-                                      snapshot.data?['kind'] ?? '',
+                                      "${snapshot.data!['correction_point']}          ",
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 20,
@@ -174,36 +279,20 @@ class _MyProfilePageState extends State<MyProfilePage> {
                                     ),
                                   ],
                                 ),
-                              ]),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  const Icon(
-                                    Icons.wallet_outlined,
-                                    color: Colors.white,
-                                  ),
-                                  const SizedBox(width: 5),
-                                  Text(
-                                    snapshot.data?['wallet'].toString() ?? '0',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                              ],
+                            ),
+                            if (snapshot.data?['phone'] != null &&
+                                snapshot.data?['phone'] != 'hidden')
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   const Icon(
-                                    Icons.star,
+                                    Icons.phone,
                                     color: Colors.white,
                                   ),
                                   const SizedBox(width: 5),
                                   Text(
-                                    "${snapshot.data!['correction_point']}          ",
+                                    snapshot.data?['phone'] ?? '',
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 20,
@@ -211,61 +300,41 @@ class _MyProfilePageState extends State<MyProfilePage> {
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
-                          if (snapshot.data?['phone'] != null &&
-                              snapshot.data?['phone'] != 'hidden')
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                            const SizedBox(height: 10),
+                            Stack(
+                              alignment: Alignment.center,
                               children: [
-                                const Icon(
-                                  Icons.phone,
-                                  color: Colors.white,
-                                ),
-                                const SizedBox(width: 5),
-                                Text(
-                                  snapshot.data?['phone'] ?? '',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
+                                SizedBox(
+                                  height: 18,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: LinearProgressIndicator(
+                                      value: snapshot.data?['cursus_users'][0]
+                                                  ["level"] -
+                                              snapshot.data?['cursus_users'][0]
+                                                      ["level"]
+                                                  ?.floorToDouble() ??
+                                          0,
+                                      backgroundColor: const Color.fromARGB(
+                                          255, 184, 188, 188),
+                                      valueColor:
+                                          const AlwaysStoppedAnimation<Color>(
+                                              Color.fromARGB(255, 27, 143, 73)),
+                                    ),
                                   ),
                                 ),
+                                Text(
+                                  "${snapshot.data?['cursus_users']?[1]["level"]?.toString() ?? ''}%",
+                                  style: const TextStyle(
+                                    color: Colors.black26,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                  ),
+                                )
                               ],
                             ),
-                          const SizedBox(height: 10),
-                          Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              SizedBox(
-                                height: 18,
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: LinearProgressIndicator(
-                                    value: snapshot.data?['cursus_users'][0]
-                                                ["level"] -
-                                            snapshot.data?['cursus_users'][0]
-                                                    ["level"]
-                                                ?.floorToDouble() ??
-                                        0,
-                                    backgroundColor: const Color.fromARGB(
-                                        255, 184, 188, 188),
-                                    valueColor:
-                                        const AlwaysStoppedAnimation<Color>(
-                                            Color.fromARGB(255, 27, 143, 73)),
-                                  ),
-                                ),
-                              ),
-                              Text(
-                                "${snapshot.data?['cursus_users']?[1]["level"]?.toString() ?? ''}%",
-                                style: const TextStyle(
-                                  color: Colors.black26,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                ),
-                              )
-                            ],
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ]),
                   ),
@@ -290,7 +359,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
                     ],
                   ),
                   Container(
-                    height: 180, // Slightly increased height for better spacing
+                    height: 180,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
                           vertical: 10, horizontal: 15),
@@ -486,7 +555,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
                         ticks: (snapshot.data?['cursus_users'][1]['skills']
                                 as List)
                             .map<int>(
-                                (skill) => (skill['level'] as num).toInt())
+                                (skill) => (skill['level'] * 10 as num).toInt())
                             .toList(),
                         features: (snapshot.data?['cursus_users'][1]['skills']
                                 as List)
@@ -494,16 +563,12 @@ class _MyProfilePageState extends State<MyProfilePage> {
                             .toList(),
                         data: [
                           (snapshot.data?['cursus_users'][1]['skills'] as List)
-                              .map<int>((skill) =>
-                                  (skill['level'] / 1000 as num).toInt())
+                              .map<int>(
+                                  (skill) => (skill['level'] as num).toInt())
                               .toList()
                         ],
                         reverseAxis: true,
                         useSides: true,
-
-                        /// text size of the axis
-                        // fontSize: 12, not working
-                        // text size of the axis
                       ),
                     ),
                   ),
