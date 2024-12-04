@@ -6,15 +6,15 @@ class StoreProvider with ChangeNotifier {
   static String? _token;
   static int page_number = 0;
   static String? search_name = null;
-  static String _refresh_token = '';
+  static int retry = 0;
 
   void setUser(Map<String, dynamic> newUser) {
     _user = newUser;
     notifyListeners();
   }
 
-  void setRefreshToken(String newRefreshToken) {
-    _refresh_token = newRefreshToken;
+  void setRetry(int newRetry) {
+    retry = newRetry;
     notifyListeners();
   }
 
@@ -37,12 +37,13 @@ class StoreProvider with ChangeNotifier {
   String? get token => _token;
   int get pageNumber => page_number;
   String? get searchName => search_name;
-  String get refreshToken => _refresh_token;
+  int get getRetry => retry;
 
   void clearUser() {
     _user = null;
     _token = null;
     page_number = 0;
+    retry = 0;
     search_name = null;
     notifyListeners();
   }

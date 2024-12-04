@@ -18,11 +18,8 @@ class MyDetailsPage extends StatelessWidget {
       body: Consumer<StoreProvider>(
         builder: (context, store, child) {
           final pageNumber = store.pageNumber;
-          final searchName =
-              store.searchName ?? store.user?['login'] ?? 'Unknown';
-
           if (pageNumber == 0) {
-            return MyProfilePage(loginSender: searchName);
+            return MyProfilePage();
           } else if (pageNumber == 1) {
             return const MySearchProfile();
           } else {
@@ -33,6 +30,9 @@ class MyDetailsPage extends StatelessWidget {
     );
   }
 }
+
+
+
 
 class NavigationDrawer extends StatelessWidget {
   const NavigationDrawer({super.key});

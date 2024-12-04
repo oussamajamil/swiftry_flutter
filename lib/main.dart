@@ -26,8 +26,7 @@ final _router = GoRouter(
       routes: [
         GoRoute(
           path: 'profile',
-          builder: (context, state) =>
-              MyProfilePage(loginSender: state.extra as String? ?? ''),
+          builder: (context, state) => MyProfilePage(),
         ),
         GoRoute(
           path: 'search',
@@ -40,7 +39,6 @@ final _router = GoRouter(
     final storeProvider = Provider.of<StoreProvider>(context, listen: false);
     final token = storeProvider.token;
     if (token == null) {
-      print("No token found");
       return "/login";
     } else {
       return "/details";

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:swifty/auth/auth.dart';
 import 'package:swifty/store/store.dart';
 
 class MySearchProfile extends StatefulWidget {
@@ -19,6 +20,7 @@ class _MySearchProfileState extends State<MySearchProfile> {
   late TextEditingController searchController;
   late String searchTerm;
   late Timer _debounce;
+  final AuthService _authService = AuthService();
 
   @override
   void initState() {
@@ -42,6 +44,8 @@ class _MySearchProfileState extends State<MySearchProfile> {
   }
 
   Future<List<dynamic>> getUsers(String login, String token) async {
+    final store = Provider.of<StoreProvider>(context, listen: false);
+
     final response = await http.get(
       Uri.parse(
         'https://api.intra.42.fr/v2/users?filter[login]=$login',
@@ -50,9 +54,21 @@ class _MySearchProfileState extends State<MySearchProfile> {
         'Authorization': 'Bearer $token',
       },
     );
-
     if (response.statusCode == 200) {
       return jsonDecode(response.body) as List<dynamic>;
+    } else if (response.statusCode == 401 && store.getRetry < 3) {
+      final String token = await _authService.login();
+      final Map<String, dynamic> user = await _authService.getUserInfo(token);
+
+      store.setUser(user);
+      store.setToken(token);
+      store.setRetry(store.getRetry + 1);
+      return getUsers(login, token);
+    } else if (response.statusCode == 401) {
+      /// redirect to login page
+      Navigator.of(context).pop();
+      store.clearUser();
+      return Future.value([]);
     } else {
       final snackBar = SnackBar(
         elevation: 0,
@@ -60,8 +76,7 @@ class _MySearchProfileState extends State<MySearchProfile> {
         backgroundColor: Colors.transparent,
         content: AwesomeSnackbarContent(
           title: 'On Snap!',
-          message:
-              'This is an example error message that will be shown in the body of snackbar!',
+          message: 'Failed to load users',
           contentType: ContentType.failure,
         ),
       );

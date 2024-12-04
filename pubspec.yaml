@@ -48,6 +48,7 @@ dependencies:
   awesome_snackbar_content: ^0.1.4
   flutter_web_auth: ^0.6.0
   horizontal_scroll_view: ^0.0.5
+  multi_charts: ^0.3.0
 
 dev_dependencies:
   flutter_test:

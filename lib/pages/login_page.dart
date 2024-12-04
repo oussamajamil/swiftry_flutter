@@ -69,14 +69,14 @@ class _LoginPageState extends State<LoginPage> {
                         store.setUser(user);
                         GoRouter.of(context).go('/details');
                       } catch (e) {
+                        print(e);
                         final snackBar = SnackBar(
                           elevation: 0,
                           behavior: SnackBarBehavior.floating,
                           backgroundColor: Colors.transparent,
                           content: AwesomeSnackbarContent(
                             title: 'On Snap!',
-                            message:
-                                'This is an example error message that will be shown in the body of snackbar!',
+                            message: 'Failed to login',
                             contentType: ContentType.failure,
                           ),
                         );

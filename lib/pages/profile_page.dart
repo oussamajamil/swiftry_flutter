@@ -1,13 +1,14 @@
 import 'dart:convert';
+import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_radar_chart/flutter_radar_chart.dart';
 import 'package:provider/provider.dart';
+import 'package:swifty/auth/auth.dart';
 import 'package:swifty/store/store.dart';
 import 'package:http/http.dart' as http;
 
 class MyProfilePage extends StatefulWidget {
-  final String? loginSender;
-  const MyProfilePage({super.key, this.loginSender});
+  const MyProfilePage({super.key});
 
   @override
   State<MyProfilePage> createState() => _MyProfilePageState();
@@ -15,15 +16,40 @@ class MyProfilePage extends StatefulWidget {
 
 class _MyProfilePageState extends State<MyProfilePage> {
   late Future<Map<String, dynamic>> _userDetail;
+  late StoreProvider store;
+  final AuthService _authService = AuthService();
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    store = Provider.of<StoreProvider>(context, listen: false);
+    store.addListener(_onStoreUpdated);
+  }
+
+  void _onStoreUpdated() {
+    if (store.searchName != null && mounted) {
+      setState(() {
+        _userDetail = getUserDetail(store.searchName!, store.token);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    store.removeListener(_onStoreUpdated);
+    super.dispose();
+  }
+
   @override
   void initState() {
-    final store = Provider.of<StoreProvider>(context, listen: false);
+    super.initState();
+    store = Provider.of<StoreProvider>(context, listen: false);
     if (store.user == null) {
       Navigator.of(context).pop();
+    } else {
+      _userDetail =
+          getUserDetail(store.searchName ?? store.user?["login"], store.token);
     }
-    super.initState();
-    _userDetail =
-        getUserDetail(store.searchName ?? store.user?["login"], store.token);
   }
 
   void printLongMessage(String message) {
@@ -35,6 +61,9 @@ class _MyProfilePageState extends State<MyProfilePage> {
   }
 
   Future<Map<String, dynamic>> getUserDetail(login, token) async {
+    if (login == null || token == null) {
+      return {};
+    }
     final response = await http.get(
       Uri.parse('https://api.intra.42.fr/v2/users/$login'),
       headers: {
@@ -42,11 +71,39 @@ class _MyProfilePageState extends State<MyProfilePage> {
       },
     );
     if (response.statusCode == 200) {
-      printLongMessage(
-          '|||||User detail fetched successfully||||: ${response.body}');
       return json.decode(response.body);
+    } else if (response.statusCode == 401 && store.getRetry < 3) {
+      final String token = await _authService.login();
+      final Map<String, dynamic> user = await _authService.getUserInfo(token);
+      store.setUser(user);
+      store.setToken(token);
+      store.setRetry(store.getRetry + 1);
+      return getUserDetail(login, token);
+    } else if (response.statusCode == 401) {
+      /// redirect to login page
+      Navigator.of(context).pop();
+      store.clearUser();
+      return {};
+    } else if (response.statusCode == 429) {
+      return Future.delayed(const Duration(seconds: 5), () {
+        return getUserDetail(login, token);
+      });
     } else {
-      throw Exception('Failed to load user detail');
+      final snackBar = SnackBar(
+        elevation: 0,
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.transparent,
+        content: AwesomeSnackbarContent(
+          title: 'On Snap!',
+          message: 'Failed to load user details',
+          contentType: ContentType.failure,
+        ),
+      );
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(snackBar);
+      return {};
     }
   }
 
@@ -91,9 +148,8 @@ class _MyProfilePageState extends State<MyProfilePage> {
                           width: 130,
                           decoration: BoxDecoration(
                             color: const Color.fromARGB(255, 151, 148, 155),
-                            borderRadius: const BorderRadius.only(
-                              topRight: Radius.circular(5),
-                              bottomRight: Radius.circular(5),
+                            borderRadius: const BorderRadius.all(
+                              Radius.circular(10),
                             ),
                           ),
                           child: Center(
@@ -155,10 +211,15 @@ class _MyProfilePageState extends State<MyProfilePage> {
                           children: [
                             CircleAvatar(
                               radius: 60,
-                              backgroundImage: NetworkImage(
-                                snapshot.data?['image']["link"] ??
-                                    'https://cdn.intra.42.fr/users/medium_default.png',
-                              ),
+                              backgroundImage: NetworkImage(snapshot
+                                      .data?['image']?["link"] ??
+                                  'https://cdn.intra.42.fr/users/medium_default.png'),
+                              child: snapshot.data?['image']?["link"] == null
+                                  ? Text(
+                                      'No Image',
+                                      style: TextStyle(color: Colors.white),
+                                    )
+                                  : null,
                             ),
                             Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -301,38 +362,51 @@ class _MyProfilePageState extends State<MyProfilePage> {
                                 ],
                               ),
                             const SizedBox(height: 10),
-                            Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                SizedBox(
-                                  height: 18,
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(10),
-                                    child: LinearProgressIndicator(
-                                      value: snapshot.data?['cursus_users'][0]
-                                                  ["level"] -
-                                              snapshot.data?['cursus_users'][0]
-                                                      ["level"]
-                                                  ?.floorToDouble() ??
-                                          0,
-                                      backgroundColor: const Color.fromARGB(
-                                          255, 184, 188, 188),
-                                      valueColor:
-                                          const AlwaysStoppedAnimation<Color>(
-                                              Color.fromARGB(255, 27, 143, 73)),
+                            if (snapshot.data?['cursus_users'] is List &&
+                                (snapshot.data?['cursus_users'] as List)
+                                    .isNotEmpty &&
+                                snapshot.data?['cursus_users'].length > 1 &&
+                                snapshot.data?['cursus_users'][1]?["level"] !=
+                                    null)
+                              Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  SizedBox(
+                                    height: 20,
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(10),
+                                      child: LinearProgressIndicator(
+                                        value: snapshot.data?['cursus_users'][1]
+                                                    ["level"] -
+                                                snapshot.data?['cursus_users']
+                                                        [1]["level"]
+                                                    ?.floorToDouble() ??
+                                            0,
+                                        backgroundColor: const Color.fromARGB(
+                                            255, 130, 128, 128),
+                                        valueColor:
+                                            const AlwaysStoppedAnimation<Color>(
+                                                Color.fromARGB(
+                                                    255, 27, 143, 73)),
+                                      ),
                                     ),
                                   ),
-                                ),
-                                Text(
-                                  "${snapshot.data?['cursus_users']?[1]["level"]?.toString() ?? ''}%",
-                                  style: const TextStyle(
-                                    color: Colors.black26,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                  ),
-                                )
-                              ],
-                            ),
+                                  if (snapshot.data?['cursus_users'] is List &&
+                                      (snapshot.data?['cursus_users'] as List)
+                                          .isNotEmpty &&
+                                      snapshot.data?['cursus_users'][1]
+                                              ?["level"] !=
+                                          null)
+                                    Text(
+                                      "${snapshot.data?['cursus_users']?[1]["level"]?.toString() ?? ''}%",
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18,
+                                      ),
+                                    )
+                                ],
+                              ),
                           ],
                         ),
                       ),
@@ -358,80 +432,97 @@ class _MyProfilePageState extends State<MyProfilePage> {
                       ),
                     ],
                   ),
-                  Container(
+                  SizedBox(
                     height: 180,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
                           vertical: 10, horizontal: 15),
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: snapshot.data?['projects_users']
-                            .where((project) =>
-                                project['status'] == 'finished' &&
+                      child: Builder(
+                        builder: (context) {
+                          final projects =
+                              snapshot.data?['projects_users'] as List? ?? [];
+                          final filteredProjects = projects.where((project) {
+                            return project['status'] == 'finished' &&
                                 project['final_mark'] != null &&
-                                project['final_mark'] > 10)
-                            .length,
-                        itemBuilder: (context, index) {
-                          final project = snapshot.data?['projects_users']
-                              .where((project) =>
-                                  project['status'] == 'finished' &&
-                                  project['final_mark'] != null &&
-                                  project['final_mark'] > 10)
-                              .toList()[index];
-                          return Container(
-                            width: 160, // Adjusted card width
-                            margin: const EdgeInsets.only(right: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(15),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.grey.withOpacity(0.2),
-                                  spreadRadius: 2,
-                                  blurRadius: 5,
-                                  offset: const Offset(
-                                      0, 3), // changes position of shadow
+                                project['final_mark'] > 10;
+                          }).toList();
+
+                          if (filteredProjects.isEmpty) {
+                            return const Center(
+                              child: Text(
+                                'Data not found',
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                              ],
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(5),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    project['project']['name'] ??
-                                        'Unnamed Project',
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    maxLines: 1,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Status: ${project['status'] ?? 'Unknown'}',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    project['final_mark'] != null
-                                        ? 'Grade: ${project['final_mark']}'
-                                        : 'Not graded',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                      color: Color.fromARGB(255, 29, 176, 39),
-                                    ),
-                                  ),
-                                ],
                               ),
-                            ),
+                            );
+                          }
+
+                          return ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: filteredProjects.length,
+                            itemBuilder: (context, index) {
+                              final project = filteredProjects[index];
+                              return Container(
+                                width: 160, // Adjusted card width
+                                margin: const EdgeInsets.only(right: 12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(15),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.grey.withOpacity(0.2),
+                                      spreadRadius: 2,
+                                      blurRadius: 5,
+                                      offset: const Offset(
+                                          0, 3), // changes position of shadow
+                                    ),
+                                  ],
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(5),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        project['project']['name'] ??
+                                            'Unnamed Project',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        maxLines: 1,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Status: ${project['status'] ?? 'Unknown'}',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        project['final_mark'] != null
+                                            ? 'Grade: ${project['final_mark']}'
+                                            : 'Not graded',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                          color:
+                                              Color.fromARGB(255, 29, 176, 39),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
                           );
                         },
                       ),
@@ -462,73 +553,91 @@ class _MyProfilePageState extends State<MyProfilePage> {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
                           vertical: 10, horizontal: 15),
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: snapshot.data?['projects_users']
-                            .where((project) =>
-                                project['status'] != 'finished' &&
-                                project['final_mark'] == null)
-                            .length,
-                        itemBuilder: (context, index) {
-                          final project = snapshot.data?['projects_users']
-                              .where((project) =>
-                                  project['status'] != 'finished' &&
-                                  project['final_mark'] == null)
-                              .toList()[index];
-                          return Container(
-                            width: 160, // Adjusted card width
-                            margin: const EdgeInsets.only(right: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(15),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.grey.withOpacity(0.2),
-                                  spreadRadius: 2,
-                                  blurRadius: 5,
-                                  offset: const Offset(
-                                      0, 3), // changes position of shadow
+                      child: Builder(
+                        builder: (context) {
+                          final projects =
+                              snapshot.data?['projects_users'] as List? ?? [];
+                          final filteredProjects = projects.where((project) {
+                            return project['status'] != 'finished' &&
+                                project['final_mark'] == null;
+                          }).toList();
+
+                          if (filteredProjects.isEmpty) {
+                            return const Center(
+                              child: Text(
+                                'Data not found',
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                              ],
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(5),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    project['project']['name'] ??
-                                        'Unnamed Project',
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    maxLines: 1,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Status: ${project['status'] ?? 'Unknown'}',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    project['final_mark'] != null
-                                        ? 'Grade: ${project['final_mark']}'
-                                        : 'Not graded',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                      color: Color.fromARGB(255, 29, 176, 39),
-                                    ),
-                                  ),
-                                ],
                               ),
-                            ),
+                            );
+                          }
+
+                          return ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: filteredProjects.length,
+                            itemBuilder: (context, index) {
+                              final project = filteredProjects[index];
+                              return Container(
+                                width: 160, // Adjusted card width
+                                margin: const EdgeInsets.only(right: 12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(15),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.grey.withOpacity(0.2),
+                                      spreadRadius: 2,
+                                      blurRadius: 5,
+                                      offset: const Offset(
+                                          0, 3), // changes position of shadow
+                                    ),
+                                  ],
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(5),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        project['project']['name'] ??
+                                            'Unnamed Project',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        maxLines: 1,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Status: ${project['status'] ?? 'Unknown'}',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        project['final_mark'] != null
+                                            ? 'Grade: ${project['final_mark']}'
+                                            : 'Not graded',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                          color:
+                                              Color.fromARGB(255, 29, 176, 39),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
                           );
                         },
                       ),
@@ -548,27 +657,62 @@ class _MyProfilePageState extends State<MyProfilePage> {
                   ),
                   Container(
                     height: 200,
-                    color: const Color.fromARGB(255, 246, 248, 246),
+                    color: snapshot.data?['cursus_users'] is List &&
+                            snapshot.data?['cursus_users'].length > 1
+                        ? const Color.fromARGB(255, 246, 248, 246)
+                        : Colors.transparent,
                     child: Padding(
                       padding: const EdgeInsets.all(15),
-                      child: RadarChart.light(
-                        ticks: (snapshot.data?['cursus_users'][1]['skills']
-                                as List)
-                            .map<int>(
-                                (skill) => (skill['level'] * 10 as num).toInt())
-                            .toList(),
-                        features: (snapshot.data?['cursus_users'][1]['skills']
-                                as List)
-                            .map<String>((skill) => skill['name'].toString())
-                            .toList(),
-                        data: [
-                          (snapshot.data?['cursus_users'][1]['skills'] as List)
-                              .map<int>(
-                                  (skill) => (skill['level'] as num).toInt())
-                              .toList()
-                        ],
-                        reverseAxis: true,
-                        useSides: true,
+                      child: Builder(
+                        builder: (context) {
+                          final cursusUsers = snapshot.data?['cursus_users'];
+                          if (cursusUsers is List && cursusUsers.length > 1) {
+                            final skills = cursusUsers[1]['skills'];
+                            if (skills is List) {
+                              try {
+                                final ticks = skills
+                                    .map<int>((skill) =>
+                                        (skill['level'] as num).toInt())
+                                    .toList();
+                                final features = skills
+                                    .map<String>((skill) =>
+                                        (skill['name'] ?? '').toString())
+                                    .toList();
+                                final data = skills
+                                    .map<num>((skill) =>
+                                        (((skill['level'] as num?) ?? 0) / 10))
+                                    .toList();
+                                return RadarChart(
+                                  ticks: ticks,
+                                  features: features,
+                                  data: [data],
+                                  featuresTextStyle: const TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 11,
+                                  ),
+                                );
+                              } catch (e) {
+                                debugPrint('Error processing skills: $e');
+                                return const Center(
+                                  child: Text(
+                                    'Invalid data format',
+                                    style: TextStyle(color: Colors.red),
+                                  ),
+                                );
+                              }
+                            }
+                          }
+                          return const Center(
+                            child: Text(
+                              'Data not found',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ),

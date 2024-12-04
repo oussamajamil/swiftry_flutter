@@ -12,12 +12,15 @@ class AuthService {
   final String tokenUrl = "https://api.intra.42.fr/oauth/token";
 
   Future<String> login() async {
-    print("i am here in login function");
     final result = await FlutterWebAuth.authenticate(
       url:
           "$authUrl?client_id=$clientId&redirect_uri=$redirectUri&response_type=code",
       callbackUrlScheme: "swiftyapp",
     );
+
+    if (result.isEmpty) {
+      throw Exception("Failed to authenticate");
+    }
 
     final code = Uri.parse(result).queryParameters['code'];
     if (code != null) {
@@ -35,14 +38,11 @@ class AuthService {
         },
       );
       if (response.statusCode == 200) {
-        print("i am here");
         return jsonDecode(response.body)['access_token'];
       } else {
-        print(response.statusCode);
         throw Exception("Failed to retrieve access code");
       }
     } else {
-      print("-------------");
       throw Exception("Failed to retrieve access code");
     }
   }
