@@ -69,7 +69,6 @@ class _LoginPageState extends State<LoginPage> {
                         store.setUser(user);
                         GoRouter.of(context).go('/details');
                       } catch (e) {
-                        print(e);
                         final snackBar = SnackBar(
                           elevation: 0,
                           behavior: SnackBarBehavior.floating,
@@ -80,7 +79,6 @@ class _LoginPageState extends State<LoginPage> {
                             contentType: ContentType.failure,
                           ),
                         );
-
                         ScaffoldMessenger.of(context)
                           ..hideCurrentSnackBar()
                           ..showSnackBar(snackBar);

@@ -4,6 +4,7 @@ import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:swifty/auth/auth.dart';
 import 'package:swifty/store/store.dart';
@@ -130,7 +131,13 @@ class _MySearchProfileState extends State<MySearchProfile> {
                 future: _SearchDetails, // Use the list type here
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
+                    return Center(
+                      child: LoadingAnimationWidget.twistingDots(
+                        leftDotColor: const Color.fromARGB(255, 196, 196, 203),
+                        rightDotColor: const Color.fromARGB(255, 7, 182, 191),
+                        size: 100,
+                      ),
+                    );
                   } else if (snapshot.hasError) {
                     return Center(
                       child: Text(

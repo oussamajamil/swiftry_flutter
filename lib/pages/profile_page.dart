@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_radar_chart/flutter_radar_chart.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:swifty/auth/auth.dart';
 import 'package:swifty/store/store.dart';
@@ -114,8 +115,12 @@ class _MyProfilePageState extends State<MyProfilePage> {
       future: _userDetail,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(),
+          return Center(
+            child: LoadingAnimationWidget.twistingDots(
+              leftDotColor: const Color.fromARGB(255, 196, 196, 203),
+              rightDotColor: const Color.fromARGB(255, 7, 182, 191),
+              size: 150,
+            ),
           );
         } else if (snapshot.hasError) {
           return Center(
@@ -466,7 +471,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
                             itemBuilder: (context, index) {
                               final project = filteredProjects[index];
                               return Container(
-                                width: 160, // Adjusted card width
+                                width: 200, // Adjusted card width
                                 margin: const EdgeInsets.only(right: 12),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
@@ -513,7 +518,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
                                             : 'Not graded',
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
-                                          fontSize: 12,
+                                          fontSize: 14,
                                           color:
                                               Color.fromARGB(255, 29, 176, 39),
                                         ),

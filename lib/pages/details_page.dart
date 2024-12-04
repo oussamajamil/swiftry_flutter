@@ -12,7 +12,7 @@ class MyDetailsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Details"),
+        title: const Text("Swifty"),
       ),
       drawer: const NavigationDrawer(),
       body: Consumer<StoreProvider>(
@@ -30,9 +30,6 @@ class MyDetailsPage extends StatelessWidget {
     );
   }
 }
-
-
-
 
 class NavigationDrawer extends StatelessWidget {
   const NavigationDrawer({super.key});
