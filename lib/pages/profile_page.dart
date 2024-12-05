@@ -19,7 +19,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
   late Future<Map<String, dynamic>> _userDetail;
   late StoreProvider store;
   final AuthService _authService = AuthService();
-
+  bool show_loader = true;
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -114,7 +114,8 @@ class _MyProfilePageState extends State<MyProfilePage> {
             child: FutureBuilder<Map<String, dynamic>>(
       future: _userDetail,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            show_loader) {
           return Center(
             child: LoadingAnimationWidget.twistingDots(
               leftDotColor: const Color.fromARGB(255, 196, 196, 203),
@@ -132,157 +133,214 @@ class _MyProfilePageState extends State<MyProfilePage> {
         }
         return Scaffold(
           body: SafeArea(
-            child: SingleChildScrollView(
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                child: Column(children: [
-                  Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: const Color.fromARGB(255, 80, 77, 84),
-                      borderRadius: BorderRadius.circular(
-                          15), // Adjust the radius as needed
-                    ),
-                    child: Stack(children: [
-                      Positioned(
-                        top: 10,
-                        right: 8,
-                        child: Container(
-                          height: 30,
-                          width: 130,
-                          decoration: BoxDecoration(
-                            color: const Color.fromARGB(255, 151, 148, 155),
-                            borderRadius: const BorderRadius.all(
-                              Radius.circular(10),
+            child: RefreshIndicator(
+              onRefresh: () async {
+                setState(() {
+                  show_loader = false;
+                });
+                await getUserDetail(
+                        store.searchName ?? store.user?["login"], store.token)
+                    .then((value) {
+                  setState(() {
+                    show_loader = true;
+                  });
+                  _userDetail = Future.value(value);
+                  return value;
+                });
+              },
+              child: SingleChildScrollView(
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                  child: Column(children: [
+                    Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: const Color.fromARGB(255, 80, 77, 84),
+                        borderRadius: BorderRadius.circular(
+                            15), // Adjust the radius as needed
+                      ),
+                      child: Stack(children: [
+                        Positioned(
+                          top: 10,
+                          right: 8,
+                          child: Container(
+                            height: 30,
+                            width: 130,
+                            decoration: BoxDecoration(
+                              color: const Color.fromARGB(255, 151, 148, 155),
+                              borderRadius: const BorderRadius.all(
+                                Radius.circular(10),
+                              ),
                             ),
+                            child: Center(
+                                child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                if (snapshot.data?['location'] != null)
+                                  Row(
+                                    children: [
+                                      Container(
+                                        height: 15,
+                                        width: 15,
+                                        decoration: const BoxDecoration(
+                                          color:
+                                              Color.fromARGB(255, 14, 241, 105),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 5),
+                                      Text(
+                                        snapshot.data?['location'] ?? '',
+                                        style: const TextStyle(
+                                          color:
+                                              Color.fromARGB(255, 14, 241, 105),
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                if (snapshot.data?['location'] == null)
+                                  Row(
+                                    children: [
+                                      Container(
+                                        height: 15,
+                                        width: 15,
+                                        decoration: const BoxDecoration(
+                                          color:
+                                              Color.fromARGB(255, 224, 156, 8),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 5),
+                                      const Text(
+                                        'Unavailable',
+                                        style: TextStyle(
+                                          color:
+                                              Color.fromARGB(255, 255, 175, 2),
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                              ],
+                            )),
                           ),
-                          child: Center(
-                              child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 10, horizontal: 20),
+                          child: Column(
                             children: [
-                              if (snapshot.data?['location'] != null)
-                                Row(
+                              CircleAvatar(
+                                radius: 60,
+                                backgroundImage: NetworkImage(snapshot
+                                        .data?['image']?["link"] ??
+                                    'https://cdn.intra.42.fr/users/medium_default.png'),
+                                child: snapshot.data?['image']?["link"] == null
+                                    ? Text(
+                                        'No Image',
+                                        style: TextStyle(color: Colors.white),
+                                      )
+                                    : null,
+                              ),
+                              Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Container(
-                                      height: 15,
-                                      width: 15,
-                                      decoration: const BoxDecoration(
-                                        color:
-                                            Color.fromARGB(255, 14, 241, 105),
-                                        shape: BoxShape.circle,
+                                    Text(
+                                      snapshot.data?['first_name'] ?? '',
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
                                       ),
                                     ),
                                     const SizedBox(width: 5),
                                     Text(
-                                      snapshot.data?['location'] ?? '',
+                                      snapshot.data?['last_name'] ?? '',
                                       style: const TextStyle(
-                                        color:
-                                            Color.fromARGB(255, 14, 241, 105),
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              if (snapshot.data?['location'] == null)
-                                Row(
-                                  children: [
-                                    Container(
-                                      height: 15,
-                                      width: 15,
-                                      decoration: const BoxDecoration(
-                                        color: Color.fromARGB(255, 224, 156, 8),
-                                        shape: BoxShape.circle,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
                                       ),
                                     ),
                                     const SizedBox(width: 5),
-                                    const Text(
-                                      'Unavailable',
-                                      style: TextStyle(
-                                        color: Color.fromARGB(255, 255, 175, 2),
-                                        fontSize: 16,
-                                      ),
+                                    Icon(
+                                      Icons.verified,
+                                      color: Colors.white,
+                                      size: 20,
                                     ),
-                                  ],
-                                ),
-                            ],
-                          )),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 10, horizontal: 20),
-                        child: Column(
-                          children: [
-                            CircleAvatar(
-                              radius: 60,
-                              backgroundImage: NetworkImage(snapshot
-                                      .data?['image']?["link"] ??
-                                  'https://cdn.intra.42.fr/users/medium_default.png'),
-                              child: snapshot.data?['image']?["link"] == null
-                                  ? Text(
-                                      'No Image',
-                                      style: TextStyle(color: Colors.white),
-                                    )
-                                  : null,
-                            ),
-                            Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                                  ]),
+                              const SizedBox(height: 10),
+                              Row(
                                 children: [
-                                  Text(
-                                    snapshot.data?['first_name'] ?? '',
-                                    style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
+                                  const Icon(
+                                    Icons.email,
+                                    color: Colors.white,
                                   ),
                                   const SizedBox(width: 5),
                                   Text(
-                                    snapshot.data?['last_name'] ?? '',
+                                    snapshot.data?['email'] ?? '',
                                     style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
                                       color: Colors.white,
+                                      fontSize: 20,
                                     ),
                                   ),
-                                  const SizedBox(width: 5),
-                                  Icon(
-                                    Icons.verified,
-                                    color: Colors.white,
-                                    size: 20,
-                                  ),
-                                ]),
-                            const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.email,
-                                  color: Colors.white,
-                                ),
-                                const SizedBox(width: 5),
-                                Text(
-                                  snapshot.data?['email'] ?? '',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Row(
+                                ],
+                              ),
+                              Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.person,
+                                          color: Colors.white,
+                                        ),
+                                        const SizedBox(width: 5),
+                                        Text(
+                                          snapshot.data?['login'] ?? '',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 20,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(
+                                          Icons.school,
+                                          color: Colors.white,
+                                        ),
+                                        const SizedBox(width: 5),
+                                        Text(
+                                          snapshot.data?['kind'] ?? '',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 20,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ]),
+                              Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Row(
                                     children: [
                                       const Icon(
-                                        Icons.person,
+                                        Icons.wallet_outlined,
                                         color: Colors.white,
                                       ),
                                       const SizedBox(width: 5),
                                       Text(
-                                        snapshot.data?['login'] ?? '',
+                                        snapshot.data?['wallet'].toString() ??
+                                            '0',
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 20,
@@ -294,12 +352,12 @@ class _MyProfilePageState extends State<MyProfilePage> {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       const Icon(
-                                        Icons.school,
+                                        Icons.star,
                                         color: Colors.white,
                                       ),
                                       const SizedBox(width: 5),
                                       Text(
-                                        snapshot.data?['kind'] ?? '',
+                                        "${snapshot.data!['correction_point']}          ",
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 20,
@@ -307,37 +365,20 @@ class _MyProfilePageState extends State<MyProfilePage> {
                                       ),
                                     ],
                                   ),
-                                ]),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.wallet_outlined,
-                                      color: Colors.white,
-                                    ),
-                                    const SizedBox(width: 5),
-                                    Text(
-                                      snapshot.data?['wallet'].toString() ??
-                                          '0',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 20,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                ],
+                              ),
+                              if (snapshot.data?['phone'] != null &&
+                                  snapshot.data?['phone'] != 'hidden')
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     const Icon(
-                                      Icons.star,
+                                      Icons.phone,
                                       color: Colors.white,
                                     ),
                                     const SizedBox(width: 5),
                                     Text(
-                                      "${snapshot.data!['correction_point']}          ",
+                                      snapshot.data?['phone'] ?? '',
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 20,
@@ -345,383 +386,369 @@ class _MyProfilePageState extends State<MyProfilePage> {
                                     ),
                                   ],
                                 ),
-                              ],
-                            ),
-                            if (snapshot.data?['phone'] != null &&
-                                snapshot.data?['phone'] != 'hidden')
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(
-                                    Icons.phone,
+                              const SizedBox(height: 10),
+                              if (snapshot.data?['cursus_users'] is List &&
+                                  (snapshot.data?['cursus_users'] as List)
+                                      .isNotEmpty &&
+                                  snapshot.data?['cursus_users'].length > 1 &&
+                                  snapshot.data?['cursus_users'][1]?["level"] !=
+                                      null)
+                                Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    SizedBox(
+                                      height: 20,
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: LinearProgressIndicator(
+                                          value: snapshot.data?['cursus_users']
+                                                      [1]["level"] -
+                                                  snapshot.data?['cursus_users']
+                                                          [1]["level"]
+                                                      ?.floorToDouble() ??
+                                              0,
+                                          backgroundColor: const Color.fromARGB(
+                                              255, 130, 128, 128),
+                                          valueColor:
+                                              const AlwaysStoppedAnimation<
+                                                      Color>(
+                                                  Color.fromARGB(
+                                                      255, 27, 143, 73)),
+                                        ),
+                                      ),
+                                    ),
+                                    if (snapshot.data?['cursus_users']
+                                            is List &&
+                                        (snapshot.data?['cursus_users'] as List)
+                                            .isNotEmpty &&
+                                        snapshot.data?['cursus_users'][1]
+                                                ?["level"] !=
+                                            null)
+                                      Text(
+                                        "${snapshot.data?['cursus_users']?[1]["level"]?.toStringAsFixed(2) ?? ''}%",
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 18,
+                                        ),
+                                      )
+                                  ],
+                                ),
+                            ],
+                          ),
+                        ),
+                      ]),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Text(
+                          'Projects',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          '(completed)',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(
+                      height: 180,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 10, horizontal: 15),
+                        child: Builder(
+                          builder: (context) {
+                            final projects =
+                                snapshot.data?['projects_users'] as List? ?? [];
+                            final filteredProjects = projects.where((project) {
+                              return project['status'] == 'finished' &&
+                                  project['final_mark'] != null &&
+                                  project['final_mark'] > 10;
+                            }).toList();
+
+                            if (filteredProjects.isEmpty) {
+                              return const Center(
+                                child: Text(
+                                  'Data not found',
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              );
+                            }
+
+                            return ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: filteredProjects.length,
+                              itemBuilder: (context, index) {
+                                final project = filteredProjects[index];
+                                return Container(
+                                  width: 200, // Adjusted card width
+                                  margin: const EdgeInsets.only(right: 12),
+                                  decoration: BoxDecoration(
                                     color: Colors.white,
-                                  ),
-                                  const SizedBox(width: 5),
-                                  Text(
-                                    snapshot.data?['phone'] ?? '',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            const SizedBox(height: 10),
-                            if (snapshot.data?['cursus_users'] is List &&
-                                (snapshot.data?['cursus_users'] as List)
-                                    .isNotEmpty &&
-                                snapshot.data?['cursus_users'].length > 1 &&
-                                snapshot.data?['cursus_users'][1]?["level"] !=
-                                    null)
-                              Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  SizedBox(
-                                    height: 20,
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(10),
-                                      child: LinearProgressIndicator(
-                                        value: snapshot.data?['cursus_users'][1]
-                                                    ["level"] -
-                                                snapshot.data?['cursus_users']
-                                                        [1]["level"]
-                                                    ?.floorToDouble() ??
-                                            0,
-                                        backgroundColor: const Color.fromARGB(
-                                            255, 130, 128, 128),
-                                        valueColor:
-                                            const AlwaysStoppedAnimation<Color>(
-                                                Color.fromARGB(
-                                                    255, 27, 143, 73)),
-                                      ),
-                                    ),
-                                  ),
-                                  if (snapshot.data?['cursus_users'] is List &&
-                                      (snapshot.data?['cursus_users'] as List)
-                                          .isNotEmpty &&
-                                      snapshot.data?['cursus_users'][1]
-                                              ?["level"] !=
-                                          null)
-                                    Text(
-                                      "${snapshot.data?['cursus_users']?[1]["level"]?.toString() ?? ''}%",
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 18,
-                                      ),
-                                    )
-                                ],
-                              ),
-                          ],
-                        ),
-                      ),
-                    ]),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Text(
-                        'Projects',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        '(completed)',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 180,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 10, horizontal: 15),
-                      child: Builder(
-                        builder: (context) {
-                          final projects =
-                              snapshot.data?['projects_users'] as List? ?? [];
-                          final filteredProjects = projects.where((project) {
-                            return project['status'] == 'finished' &&
-                                project['final_mark'] != null &&
-                                project['final_mark'] > 10;
-                          }).toList();
-
-                          if (filteredProjects.isEmpty) {
-                            return const Center(
-                              child: Text(
-                                'Data not found',
-                                style: TextStyle(
-                                  color: Colors.red,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            );
-                          }
-
-                          return ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: filteredProjects.length,
-                            itemBuilder: (context, index) {
-                              final project = filteredProjects[index];
-                              return Container(
-                                width: 200, // Adjusted card width
-                                margin: const EdgeInsets.only(right: 12),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(15),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.grey.withOpacity(0.2),
-                                      spreadRadius: 2,
-                                      blurRadius: 5,
-                                      offset: const Offset(
-                                          0, 3), // changes position of shadow
-                                    ),
-                                  ],
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(5),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        project['project']['name'] ??
-                                            'Unnamed Project',
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        maxLines: 1,
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        'Status: ${project['status'] ?? 'Unknown'}',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey[600],
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        project['final_mark'] != null
-                                            ? 'Grade: ${project['final_mark']}'
-                                            : 'Not graded',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                          color:
-                                              Color.fromARGB(255, 29, 176, 39),
-                                        ),
+                                    borderRadius: BorderRadius.circular(15),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.grey.withOpacity(0.2),
+                                        spreadRadius: 2,
+                                        blurRadius: 5,
+                                        offset: const Offset(
+                                            0, 3), // changes position of shadow
                                       ),
                                     ],
                                   ),
-                                ),
-                              );
-                            },
-                          );
-                        },
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(5),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          project['project']['name'] ??
+                                              'Unnamed Project',
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          maxLines: 1,
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'Status: ${project['status'] ?? 'Unknown'}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          project['final_mark'] != null
+                                              ? 'Grade: ${project['final_mark']}'
+                                              : 'Not graded',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                            color: Color.fromARGB(
+                                                255, 29, 176, 39),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Text(
-                        'Projects',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Text(
+                          'Projects',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        '(in progress)',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
+                        const SizedBox(width: 5),
+                        Text(
+                          '(in progress)',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  Container(
-                    height: 200, // Slightly increased height for better spacing
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 10, horizontal: 15),
-                      child: Builder(
-                        builder: (context) {
-                          final projects =
-                              snapshot.data?['projects_users'] as List? ?? [];
-                          final filteredProjects = projects.where((project) {
-                            return project['status'] != 'finished' &&
-                                project['final_mark'] == null;
-                          }).toList();
+                      ],
+                    ),
+                    Container(
+                      height:
+                          200, // Slightly increased height for better spacing
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 10, horizontal: 15),
+                        child: Builder(
+                          builder: (context) {
+                            final projects =
+                                snapshot.data?['projects_users'] as List? ?? [];
+                            final filteredProjects = projects.where((project) {
+                              return project['status'] != 'finished' &&
+                                  project['final_mark'] == null;
+                            }).toList();
 
-                          if (filteredProjects.isEmpty) {
-                            return const Center(
-                              child: Text(
-                                'Data not found',
-                                style: TextStyle(
-                                  color: Colors.red,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+                            if (filteredProjects.isEmpty) {
+                              return const Center(
+                                child: Text(
+                                  'Data not found',
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                            );
-                          }
+                              );
+                            }
 
-                          return ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: filteredProjects.length,
-                            itemBuilder: (context, index) {
-                              final project = filteredProjects[index];
-                              return Container(
-                                width: 160, // Adjusted card width
-                                margin: const EdgeInsets.only(right: 12),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(15),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.grey.withOpacity(0.2),
-                                      spreadRadius: 2,
-                                      blurRadius: 5,
-                                      offset: const Offset(
-                                          0, 3), // changes position of shadow
-                                    ),
-                                  ],
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(5),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        project['project']['name'] ??
-                                            'Unnamed Project',
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        maxLines: 1,
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        'Status: ${project['status'] ?? 'Unknown'}',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey[600],
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        project['final_mark'] != null
-                                            ? 'Grade: ${project['final_mark']}'
-                                            : 'Not graded',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12,
-                                          color:
-                                              Color.fromARGB(255, 29, 176, 39),
-                                        ),
+                            return ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: filteredProjects.length,
+                              itemBuilder: (context, index) {
+                                final project = filteredProjects[index];
+                                return Container(
+                                  width: 160, // Adjusted card width
+                                  margin: const EdgeInsets.only(right: 12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(15),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.grey.withOpacity(0.2),
+                                        spreadRadius: 2,
+                                        blurRadius: 5,
+                                        offset: const Offset(
+                                            0, 3), // changes position of shadow
                                       ),
                                     ],
                                   ),
-                                ),
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Row(
-                    children: [
-                      Text(
-                        'Skills',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(5),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          project['project']['name'] ??
+                                              'Unnamed Project',
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          maxLines: 1,
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'Status: ${project['status'] ?? 'Unknown'}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          project['final_mark'] != null
+                                              ? 'Grade: ${project['final_mark']}'
+                                              : 'Not graded',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 12,
+                                            color: Color.fromARGB(
+                                                255, 29, 176, 39),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+                          },
                         ),
                       ),
-                    ],
-                  ),
-                  Container(
-                    height: 200,
-                    color: snapshot.data?['cursus_users'] is List &&
-                            snapshot.data?['cursus_users'].length > 1
-                        ? const Color.fromARGB(255, 246, 248, 246)
-                        : Colors.transparent,
-                    child: Padding(
-                      padding: const EdgeInsets.all(15),
-                      child: Builder(
-                        builder: (context) {
-                          final cursusUsers = snapshot.data?['cursus_users'];
-                          if (cursusUsers is List && cursusUsers.length > 1) {
-                            final skills = cursusUsers[1]['skills'];
-                            if (skills is List) {
-                              try {
-                                final ticks = skills
-                                    .map<int>((skill) =>
-                                        (skill['level'] as num).toInt())
-                                    .toList();
-                                final features = skills
-                                    .map<String>((skill) =>
-                                        (skill['name'] ?? '').toString())
-                                    .toList();
-                                final data = skills
-                                    .map<num>((skill) =>
-                                        (((skill['level'] as num?) ?? 0) / 10))
-                                    .toList();
-                                return RadarChart(
-                                  ticks: ticks,
-                                  features: features,
-                                  data: [data],
-                                  featuresTextStyle: const TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 11,
-                                  ),
-                                );
-                              } catch (e) {
-                                debugPrint('Error processing skills: $e');
-                                return const Center(
-                                  child: Text(
-                                    'Invalid data format',
-                                    style: TextStyle(color: Colors.red),
-                                  ),
-                                );
+                    ),
+                    const SizedBox(height: 5),
+                    Row(
+                      children: [
+                        Text(
+                          'Skills',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      height: 200,
+                      color: snapshot.data?['cursus_users'] is List &&
+                              snapshot.data?['cursus_users'].length > 1
+                          ? const Color.fromARGB(255, 246, 248, 246)
+                          : Colors.transparent,
+                      child: Padding(
+                        padding: const EdgeInsets.all(15),
+                        child: Builder(
+                          builder: (context) {
+                            final cursusUsers = snapshot.data?['cursus_users'];
+                            if (cursusUsers is List && cursusUsers.length > 1) {
+                              final skills = cursusUsers[1]['skills'];
+                              if (skills is List) {
+                                try {
+                                  final ticks = skills
+                                      .map<int>((skill) =>
+                                          (skill['level'] as num).toInt())
+                                      .toList();
+                                  final features = skills
+                                      .map<String>((skill) =>
+                                          (skill['name'] ?? '').toString())
+                                      .toList();
+                                  final data = skills
+                                      .map<num>((skill) =>
+                                          (((skill['level'] as num?) ?? 0) /
+                                              10))
+                                      .toList();
+                                  return RadarChart(
+                                    ticks: ticks,
+                                    features: features,
+                                    data: [data],
+                                    featuresTextStyle: const TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 11,
+                                    ),
+                                  );
+                                } catch (e) {
+                                  debugPrint('Error processing skills: $e');
+                                  return const Center(
+                                    child: Text(
+                                      'Invalid data format',
+                                      style: TextStyle(color: Colors.red),
+                                    ),
+                                  );
+                                }
                               }
                             }
-                          }
-                          return const Center(
-                            child: Text(
-                              'Data not found',
-                              style: TextStyle(
-                                color: Colors.red,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                            return const Center(
+                              child: Text(
+                                'Data not found',
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
-                          );
-                        },
+                            );
+                          },
+                        ),
                       ),
                     ),
-                  ),
-                ]),
+                  ]),
+                ),
               ),
             ),
           ),
