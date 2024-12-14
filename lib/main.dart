@@ -6,8 +6,10 @@ import 'package:swifty/pages/login_page.dart';
 import 'package:swifty/pages/profile_page.dart';
 import 'package:swifty/pages/search_page.dart';
 import 'package:swifty/store/store.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() {
+void main() async {
+  await dotenv.load(fileName: ".env");
   runApp(
     ChangeNotifierProvider(
         create: (context) => StoreProvider(), child: const MyApp()),

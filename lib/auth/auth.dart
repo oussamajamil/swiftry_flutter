@@ -1,15 +1,15 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_web_auth/flutter_web_auth.dart';
 
 class AuthService {
-  final String clientId =
-      "u-s4t2ud-e3ffe29b23bca6d91f32a4f6846dbc6388ec2c2656dc486e03688c6d75b8765a";
-  final String clientSecret =
-      "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";
-  final String redirectUri = 'swiftyapp://details';
-  final String authUrl = "https://api.intra.42.fr/oauth/authorize";
-  final String tokenUrl = "https://api.intra.42.fr/oauth/token";
+  final String clientId = dotenv.env['CLIENT_ID']!;
+
+  final String clientSecret = dotenv.env['CLIENT_SECRET']!;
+  final String redirectUri = dotenv.env['REDIRECT_URI']!;
+  final String authUrl = dotenv.env['AUTHORIZATION_URL']!;
+  final String tokenUrl = dotenv.env['TOKEN_URL']!;
 
   Future<String> login() async {
     final result = await FlutterWebAuth.authenticate(
